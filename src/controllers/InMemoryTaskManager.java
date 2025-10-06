@@ -5,7 +5,6 @@ import model.Status;
 import model.Subtask;
 import model.Task;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -18,26 +17,29 @@ public class InMemoryTaskManager implements TaskManager {
     private final HistoryManager historyManager = Managers.getDefaultHistory();
 
     @Override
-    public void addNewTask(Task task) throws IOException {
+    public int addNewTask(Task task) {
         final int id = ++generatorId;
         task.setId(id);
         tasks.put(id, task);
+        return id;
     }
 
     @Override
-    public void addNewEpic(Epic epic) throws  IOException{
+    public int addNewEpic(Epic epic) {
         final int id = ++generatorId;
         epic.setId(id);
         epics.put(id, epic);
+        return id;
     }
 
     @Override
-    public void addNewSubtask(Subtask subtask) throws  IOException{
+    public int addNewSubtask(Subtask subtask) {
         final int id = ++generatorId;
         subtask.setId(id);
         subtasks.put(id, subtask);
         epics.get(subtask.getEpicId()).getSubtaskIds().add(id);
         updateEpicStatus(subtask.getEpicId());
+        return id;
     }
 
     @Override
@@ -64,7 +66,7 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public void removeEpicById(int id) throws  IOException{
+    public void removeEpicById(int id) {
         for (int subtaskId : subtasks.keySet()) {
             for (int removedId : epics.get(id).getSubtaskIds()) {
                 if (subtaskId == removedId) {
@@ -79,7 +81,7 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public void removeSubtaskById(int id, int epicId) throws IOException{
+    public void removeSubtaskById(int id, int epicId) {
         subtasks.remove(id);
         for (int i = 0; i < epics.get(epicId).getSubtaskIds().size(); i++) {
             if (epics.get(epicId).getSubtaskIds().get(i) == id) {
@@ -161,6 +163,8 @@ public class InMemoryTaskManager implements TaskManager {
             if (subtasks.get(epics.get(id).getSubtaskIds().get(i)).getStatus() == Status.TaskStatus.NEW) {
                 epics.get(id).setStatus(Status.TaskStatus.NEW);
                 if (i + 1 < epics.get(id).getSubtaskIds().size()) {
+                    if (subtasks.get(epics.get(id).getSubtaskIds().get(i + 1)).getStatus() ==
+                            Status.TaskStatus.NEW) {
                     if (subtasks.get(epics.get(id).getSubtaskIds().get(i + 1)).getStatus() == Status.TaskStatus.NEW) {
                         epics.get(id).setStatus(Status.TaskStatus.NEW);
                     } else {
@@ -169,6 +173,8 @@ public class InMemoryTaskManager implements TaskManager {
                 }
             } else if (subtasks.get(epics.get(id).getSubtaskIds().get(i)).getStatus() == Status.TaskStatus.DONE) {
                 if (i + 1 < epics.get(id).getSubtaskIds().size()) {
+                    if (subtasks.get(epics.get(id).getSubtaskIds().get(i + 1)).getStatus() ==
+                            Status.TaskStatus.DONE) {
                     if (subtasks.get(epics.get(id).getSubtaskIds().get(i + 1)).getStatus() == Status.TaskStatus.DONE) {
                         epics.get(id).setStatus(Status.TaskStatus.DONE);
                     } else {
@@ -196,4 +202,3 @@ public class InMemoryTaskManager implements TaskManager {
     public String toString() {
         return "controllers.InMemoryTaskManager";
     }
-}
